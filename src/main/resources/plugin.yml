@@ -1,0 +1,12 @@
+name: GlowCrafts
+version: '1.0.0'
+main: pluginsfix.glowcrafts.GlowCrafts
+api-version: '1.21'
+author: pluginsfix
+folia-supported: true
+softdepend: [Vault]
+commands:
+  glowcrafts:
+    description: Main GlowCrafts management command
+    aliases: [gc]
+    permission: glowcrafts.admin

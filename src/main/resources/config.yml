@@ -1,0 +1,7 @@
+config-version: 1
+
+editor:
+  allow-creative-free-items: false
+
+storage:
+  save-interval-ticks: 6000
