@@ -47,6 +47,10 @@ public final class ShapelessEditorHolder implements GlowHolder {
         this.id = id;
     }
 
+    public static boolean isAllowedSlot(int slot) {
+        return ALLOWED_SLOTS.contains(slot);
+    }
+
     public static void openNew(Player player, Messages messages, RecipeEngine recipeEngine, ChatInputHandler chatInput, PluginConfig config) {
         String defaultId = "recipe_" + System.currentTimeMillis() % 10000;
         ShapelessEditorHolder holder = new ShapelessEditorHolder(messages, recipeEngine, chatInput, config, defaultId);
@@ -71,10 +75,10 @@ public final class ShapelessEditorHolder implements GlowHolder {
         for (int i = 0; i < INGREDIENT_SLOTS.length && i < list.size(); i++) {
             RecipeIngredient ing = list.get(i);
             if (!ing.isEmpty()) {
-                inv.setItem(INGREDIENT_SLOTS[i], ing.item());
+                inv.setItem(INGREDIENT_SLOTS[i], ing.item().clone());
             }
         }
-        inv.setItem(RESULT_SLOT, recipe.result());
+        inv.setItem(RESULT_SLOT, recipe.result().clone());
 
         player.openInventory(inv);
     }
@@ -219,7 +223,7 @@ public final class ShapelessEditorHolder implements GlowHolder {
         for (int slot : INGREDIENT_SLOTS) {
             ItemStack item = inventory.getItem(slot);
             if (item != null && !item.getType().isAir()) {
-                list.add(RecipeIngredient.of(item, exactMeta));
+                list.add(RecipeIngredient.of(item.clone(), exactMeta));
             }
         }
 
@@ -229,10 +233,11 @@ public final class ShapelessEditorHolder implements GlowHolder {
         }
 
         RecipeCondition condition = new RecipeCondition(permission, levelCost, moneyCost, 200, 0.0f);
-        CraftRecipe recipe = CraftRecipe.createShapeless(id, result, list, condition, exactMeta);
+        CraftRecipe recipe = CraftRecipe.createShapeless(id, result.clone(), list, condition, exactMeta);
 
         recipeEngine.registerRecipe(recipe);
         messages.send(player, "notification.recipe-saved", Placeholder.parsed("id", id));
+        returnPlacedItems(player);
         player.closeInventory();
     }
 

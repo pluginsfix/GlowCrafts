@@ -95,28 +95,44 @@ public final class CraftListener implements Listener {
             return;
         }
 
-        if (condition.hasLevelCost()) {
-            if (player.getLevel() < condition.levelCost()) {
+        int crafts = 1;
+        if (event.isShiftClick()) {
+            int maxCrafts = Integer.MAX_VALUE;
+            for (ItemStack item : event.getInventory().getMatrix()) {
+                if (item != null && !item.getType().isAir()) {
+                    maxCrafts = Math.min(maxCrafts, item.getAmount());
+                }
+            }
+            if (maxCrafts != Integer.MAX_VALUE && maxCrafts > 0) {
+                crafts = maxCrafts;
+            }
+        }
+
+        int totalLevelCost = condition.levelCost() * crafts;
+        double totalMoneyCost = condition.moneyCost() * crafts;
+
+        if (totalLevelCost > 0) {
+            if (player.getLevel() < totalLevelCost) {
                 event.setCancelled(true);
-                messages.send(player, "craft.not-enough-level", Placeholder.parsed("level", String.valueOf(condition.levelCost())));
+                messages.send(player, "craft.not-enough-level", Placeholder.parsed("level", String.valueOf(totalLevelCost)));
                 return;
             }
         }
 
-        if (condition.hasMoneyCost() && economy.isAvailable()) {
-            if (!economy.has(player, condition.moneyCost())) {
+        if (totalMoneyCost > 0.0 && economy.isAvailable()) {
+            if (!economy.has(player, totalMoneyCost)) {
                 event.setCancelled(true);
-                messages.send(player, "craft.not-enough-money", Placeholder.parsed("amount", String.valueOf(condition.moneyCost())));
+                messages.send(player, "craft.not-enough-money", Placeholder.parsed("amount", String.valueOf(totalMoneyCost)));
                 return;
             }
         }
 
-        if (condition.hasLevelCost()) {
-            player.setLevel(player.getLevel() - condition.levelCost());
+        if (totalLevelCost > 0) {
+            player.setLevel(player.getLevel() - totalLevelCost);
         }
 
-        if (condition.hasMoneyCost() && economy.isAvailable()) {
-            economy.withdraw(player, condition.moneyCost());
+        if (totalMoneyCost > 0.0 && economy.isAvailable()) {
+            economy.withdraw(player, totalMoneyCost);
         }
     }
 

@@ -5,8 +5,14 @@ import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -20,23 +26,39 @@ public final class Messages {
     private final Map<String, List<String>> messageLists = new HashMap<>();
     private String prefix = "";
 
-    public static Messages load(File file) {
+    public static Messages load(JavaPlugin plugin) {
         Messages instance = new Messages();
-        if (!file.exists()) {
-            return instance;
+
+        InputStream defaultStream = plugin.getResource("messages.yml");
+        if (defaultStream != null) {
+            try (Reader reader = new InputStreamReader(defaultStream, StandardCharsets.UTF_8)) {
+                YamlConfiguration defaultYaml = YamlConfiguration.loadConfiguration(reader);
+                instance.loadFromYaml(defaultYaml);
+            } catch (Exception ignored) {
+            }
         }
 
-        YamlConfiguration yaml = YamlConfiguration.loadConfiguration(file);
-        for (String key : yaml.getKeys(true)) {
-            if (yaml.isString(key)) {
-                instance.messages.put(key, yaml.getString(key));
-            } else if (yaml.isList(key)) {
-                instance.messageLists.put(key, yaml.getStringList(key));
+        File file = new File(plugin.getDataFolder(), "messages.yml");
+        if (file.exists()) {
+            try (Reader reader = new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8)) {
+                YamlConfiguration diskYaml = YamlConfiguration.loadConfiguration(reader);
+                instance.loadFromYaml(diskYaml);
+            } catch (Exception ignored) {
             }
         }
 
         instance.prefix = instance.messages.getOrDefault("prefix", "");
         return instance;
+    }
+
+    private void loadFromYaml(YamlConfiguration yaml) {
+        for (String key : yaml.getKeys(true)) {
+            if (yaml.isString(key)) {
+                messages.put(key, yaml.getString(key));
+            } else if (yaml.isList(key)) {
+                messageLists.put(key, yaml.getStringList(key));
+            }
+        }
     }
 
     public String raw(String key) {

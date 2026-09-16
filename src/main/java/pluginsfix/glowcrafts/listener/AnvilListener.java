@@ -50,7 +50,6 @@ public final class AnvilListener implements Listener {
 
         CraftRecipe recipe = matchOpt.get();
         event.setResult(recipe.result().clone());
-        inv.setRepairCost(Math.max(1, recipe.condition().levelCost()));
     }
 
     @EventHandler(priority = EventPriority.HIGH)
@@ -121,9 +120,25 @@ public final class AnvilListener implements Listener {
         }
 
         inv.setItem(2, null);
-        player.getInventory().addItem(recipe.result().clone()).values().forEach(remaining ->
-                player.getWorld().dropItemNaturally(player.getLocation(), remaining)
-        );
+
+        ItemStack output = recipe.result().clone();
+        if (event.isShiftClick()) {
+            player.getInventory().addItem(output).values().forEach(rem ->
+                    player.getWorld().dropItemNaturally(player.getLocation(), rem)
+            );
+        } else {
+            ItemStack cursor = event.getCursor();
+            if (cursor.getType().isAir()) {
+                event.getView().setCursor(output);
+            } else if (cursor.isSimilar(output) && cursor.getAmount() + output.getAmount() <= cursor.getMaxStackSize()) {
+                cursor.setAmount(cursor.getAmount() + output.getAmount());
+                event.getView().setCursor(cursor);
+            } else {
+                player.getInventory().addItem(output).values().forEach(rem ->
+                        player.getWorld().dropItemNaturally(player.getLocation(), rem)
+                );
+            }
+        }
 
         player.playSound(player.getLocation(), Sound.BLOCK_ANVIL_USE, 1.0f, 1.0f);
         messages.send(player, "anvil.processed");

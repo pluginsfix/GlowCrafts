@@ -46,6 +46,10 @@ public final class AnvilEditorHolder implements GlowHolder {
         this.id = id;
     }
 
+    public static boolean isAllowedSlot(int slot) {
+        return ALLOWED_SLOTS.contains(slot);
+    }
+
     public static void openNew(Player player, Messages messages, RecipeEngine recipeEngine, ChatInputHandler chatInput, PluginConfig config) {
         String defaultId = "anvil_" + System.currentTimeMillis() % 10000;
         AnvilEditorHolder holder = new AnvilEditorHolder(messages, recipeEngine, chatInput, config, defaultId);
@@ -67,12 +71,12 @@ public final class AnvilEditorHolder implements GlowHolder {
         holder.render();
 
         if (!recipe.anvilBase().isEmpty()) {
-            inv.setItem(BASE_SLOT, recipe.anvilBase().item());
+            inv.setItem(BASE_SLOT, recipe.anvilBase().item().clone());
         }
         if (!recipe.anvilSacrifice().isEmpty()) {
-            inv.setItem(SACRIFICE_SLOT, recipe.anvilSacrifice().item());
+            inv.setItem(SACRIFICE_SLOT, recipe.anvilSacrifice().item().clone());
         }
-        inv.setItem(RESULT_SLOT, recipe.result());
+        inv.setItem(RESULT_SLOT, recipe.result().clone());
 
         player.openInventory(inv);
     }
@@ -220,16 +224,17 @@ public final class AnvilEditorHolder implements GlowHolder {
         }
 
         ItemStack sacrifice = inventory.getItem(SACRIFICE_SLOT);
-        RecipeIngredient baseIngredient = RecipeIngredient.of(base, exactMeta);
+        RecipeIngredient baseIngredient = RecipeIngredient.of(base.clone(), exactMeta);
         RecipeIngredient sacrificeIngredient = sacrifice != null && !sacrifice.getType().isAir()
-                ? RecipeIngredient.of(sacrifice, exactMeta)
+                ? RecipeIngredient.of(sacrifice.clone(), exactMeta)
                 : RecipeIngredient.empty();
 
         RecipeCondition condition = new RecipeCondition(permission, levelCost, moneyCost, 200, 0.0f);
-        CraftRecipe recipe = CraftRecipe.createAnvil(id, result, baseIngredient, sacrificeIngredient, condition, exactMeta);
+        CraftRecipe recipe = CraftRecipe.createAnvil(id, result.clone(), baseIngredient, sacrificeIngredient, condition, exactMeta);
 
         recipeEngine.registerRecipe(recipe);
         messages.send(player, "notification.recipe-saved", Placeholder.parsed("id", id));
+        returnPlacedItems(player);
         player.closeInventory();
     }
 

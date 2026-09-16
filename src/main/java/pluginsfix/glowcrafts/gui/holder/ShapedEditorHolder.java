@@ -45,6 +45,10 @@ public final class ShapedEditorHolder implements GlowHolder {
         this.id = id;
     }
 
+    public static boolean isAllowedSlot(int slot) {
+        return ALLOWED_SLOTS.contains(slot);
+    }
+
     public static void openNew(Player player, Messages messages, RecipeEngine recipeEngine, ChatInputHandler chatInput, PluginConfig config) {
         String defaultId = "recipe_" + System.currentTimeMillis() % 10000;
         ShapedEditorHolder holder = new ShapedEditorHolder(messages, recipeEngine, chatInput, config, defaultId);
@@ -68,10 +72,10 @@ public final class ShapedEditorHolder implements GlowHolder {
         RecipeIngredient[] grid = recipe.shapedGrid();
         for (int i = 0; i < GRID_SLOTS.length; i++) {
             if (i < grid.length && grid[i] != null && !grid[i].isEmpty()) {
-                inv.setItem(GRID_SLOTS[i], grid[i].item());
+                inv.setItem(GRID_SLOTS[i], grid[i].item().clone());
             }
         }
-        inv.setItem(RESULT_SLOT, recipe.result());
+        inv.setItem(RESULT_SLOT, recipe.result().clone());
 
         player.openInventory(inv);
     }
@@ -217,7 +221,7 @@ public final class ShapedEditorHolder implements GlowHolder {
         for (int i = 0; i < GRID_SLOTS.length; i++) {
             ItemStack item = inventory.getItem(GRID_SLOTS[i]);
             if (item != null && !item.getType().isAir()) {
-                grid[i] = RecipeIngredient.of(item, exactMeta);
+                grid[i] = RecipeIngredient.of(item.clone(), exactMeta);
                 hasIngredient = true;
             } else {
                 grid[i] = RecipeIngredient.empty();
@@ -230,10 +234,11 @@ public final class ShapedEditorHolder implements GlowHolder {
         }
 
         RecipeCondition condition = new RecipeCondition(permission, levelCost, moneyCost, 200, 0.0f);
-        CraftRecipe recipe = CraftRecipe.createShaped(id, result, grid, condition, exactMeta);
+        CraftRecipe recipe = CraftRecipe.createShaped(id, result.clone(), grid, condition, exactMeta);
 
         recipeEngine.registerRecipe(recipe);
         messages.send(player, "notification.recipe-saved", Placeholder.parsed("id", id));
+        returnPlacedItems(player);
         player.closeInventory();
     }
 

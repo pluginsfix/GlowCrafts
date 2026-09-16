@@ -57,19 +57,52 @@ public final class BukkitRecipeRegistrar {
     }
 
     private void registerShaped(NamespacedKey key, CraftRecipe recipe) {
-        ShapedRecipe shaped = new ShapedRecipe(key, recipe.result());
-        shaped.shape("ABC", "DEF", "GHI");
-
-        char[] chars = new char[]{'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'};
         RecipeIngredient[] grid = recipe.shapedGrid();
+        int minRow = 3;
+        int maxRow = -1;
+        int minCol = 3;
+        int maxCol = -1;
 
-        Map<Character, RecipeChoice> choices = new HashMap<>();
-        for (int i = 0; i < 9; i++) {
-            RecipeIngredient ingredient = i < grid.length ? grid[i] : null;
-            if (ingredient != null && !ingredient.isEmpty()) {
-                choices.put(chars[i], toChoice(ingredient));
+        for (int row = 0; row < 3; row++) {
+            for (int col = 0; col < 3; col++) {
+                int index = row * 3 + col;
+                RecipeIngredient ingredient = index < grid.length ? grid[index] : null;
+                if (ingredient != null && !ingredient.isEmpty()) {
+                    if (row < minRow) minRow = row;
+                    if (row > maxRow) maxRow = row;
+                    if (col < minCol) minCol = col;
+                    if (col > maxCol) maxCol = col;
+                }
             }
         }
+
+        if (maxRow == -1) {
+            return;
+        }
+
+        int rowCount = maxRow - minRow + 1;
+        String[] shape = new String[rowCount];
+        Map<Character, RecipeChoice> choices = new HashMap<>();
+        char nextSymbol = 'A';
+
+        for (int row = minRow; row <= maxRow; row++) {
+            StringBuilder rowBuilder = new StringBuilder();
+            for (int col = minCol; col <= maxCol; col++) {
+                int index = row * 3 + col;
+                RecipeIngredient ingredient = index < grid.length ? grid[index] : null;
+                if (ingredient != null && !ingredient.isEmpty()) {
+                    char symbol = nextSymbol++;
+                    rowBuilder.append(symbol);
+                    choices.put(symbol, toChoice(ingredient));
+                } else {
+                    rowBuilder.append(' ');
+                }
+            }
+            shape[row - minRow] = rowBuilder.toString();
+        }
+
+        ShapedRecipe shaped = new ShapedRecipe(key, recipe.result());
+        shaped.shape(shape);
 
         for (Map.Entry<Character, RecipeChoice> entry : choices.entrySet()) {
             shaped.setIngredient(entry.getKey(), entry.getValue());

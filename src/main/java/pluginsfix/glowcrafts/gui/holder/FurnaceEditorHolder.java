@@ -46,6 +46,10 @@ public final class FurnaceEditorHolder implements GlowHolder {
         this.id = id;
     }
 
+    public static boolean isAllowedSlot(int slot) {
+        return ALLOWED_SLOTS.contains(slot);
+    }
+
     public static void openNew(Player player, Messages messages, RecipeEngine recipeEngine, ChatInputHandler chatInput, PluginConfig config) {
         String defaultId = "furnace_" + System.currentTimeMillis() % 10000;
         FurnaceEditorHolder holder = new FurnaceEditorHolder(messages, recipeEngine, chatInput, config, defaultId);
@@ -67,9 +71,9 @@ public final class FurnaceEditorHolder implements GlowHolder {
         holder.render();
 
         if (!recipe.furnaceInput().isEmpty()) {
-            inv.setItem(INPUT_SLOT, recipe.furnaceInput().item());
+            inv.setItem(INPUT_SLOT, recipe.furnaceInput().item().clone());
         }
-        inv.setItem(RESULT_SLOT, recipe.result());
+        inv.setItem(RESULT_SLOT, recipe.result().clone());
 
         player.openInventory(inv);
     }
@@ -216,14 +220,15 @@ public final class FurnaceEditorHolder implements GlowHolder {
             return;
         }
 
-        RecipeIngredient inputIngredient = RecipeIngredient.of(input, exactMeta);
+        RecipeIngredient inputIngredient = RecipeIngredient.of(input.clone(), exactMeta);
         int cookingTicks = cookingTimeSeconds * 20;
 
         RecipeCondition condition = new RecipeCondition(permission, 0, 0.0, cookingTicks, experience);
-        CraftRecipe recipe = CraftRecipe.createFurnace(id, RecipeType.FURNACE, result, inputIngredient, condition, exactMeta);
+        CraftRecipe recipe = CraftRecipe.createFurnace(id, RecipeType.FURNACE, result.clone(), inputIngredient, condition, exactMeta);
 
         recipeEngine.registerRecipe(recipe);
         messages.send(player, "notification.recipe-saved", Placeholder.parsed("id", id));
+        returnPlacedItems(player);
         player.closeInventory();
     }
 

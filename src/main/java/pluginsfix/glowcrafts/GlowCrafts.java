@@ -1,11 +1,14 @@
 package pluginsfix.glowcrafts;
 
 import org.bukkit.command.PluginCommand;
+import org.bukkit.entity.Player;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import pluginsfix.glowcrafts.command.GlowCraftsCommand;
 import pluginsfix.glowcrafts.command.GlowCraftsTabCompleter;
 import pluginsfix.glowcrafts.config.PluginConfig;
+import pluginsfix.glowcrafts.gui.holder.GlowHolder;
 import pluginsfix.glowcrafts.gui.prompt.ChatInputHandler;
 import pluginsfix.glowcrafts.hook.VaultEconomyHook;
 import pluginsfix.glowcrafts.listener.AnvilListener;
@@ -28,7 +31,7 @@ public final class GlowCrafts extends JavaPlugin {
         saveResourceIfNotExists("messages.yml");
 
         PluginConfig config = PluginConfig.fromYaml(getConfig());
-        Messages messages = Messages.load(new File(getDataFolder(), "messages.yml"));
+        Messages messages = Messages.load(this);
 
         VaultEconomyHook economy = VaultEconomyHook.create();
         BukkitRecipeRegistrar registrar = new BukkitRecipeRegistrar(this, getLogger());
@@ -57,6 +60,12 @@ public final class GlowCrafts extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        for (Player player : getServer().getOnlinePlayers()) {
+            Inventory open = player.getOpenInventory().getTopInventory();
+            if (open.getHolder() instanceof GlowHolder) {
+                player.closeInventory();
+            }
+        }
         getServer().getScheduler().cancelTasks(this);
     }
 
